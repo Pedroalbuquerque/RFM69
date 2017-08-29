@@ -12,24 +12,34 @@
 // **********************************************************************************
 // License
 // **********************************************************************************
-// This program is free software; you can redistribute it 
-// and/or modify it under the terms of the GNU General    
-// Public License as published by the Free Software       
-// Foundation; either version 3 of the License, or        
-// (at your option) any later version.                    
-//                                                        
-// This program is distributed in the hope that it will   
-// be useful, but WITHOUT ANY WARRANTY; without even the  
-// implied warranty of MERCHANTABILITY or FITNESS FOR A   
-// PARTICULAR PURPOSE. See the GNU General Public        
-// License for more details.                              
-//                                                        
-// Licence can be viewed at                               
+// This program is free software; you can redistribute it
+// and/or modify it under the terms of the GNU General
+// Public License as published by the Free Software
+// Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will
+// be useful, but WITHOUT ANY WARRANTY; without even the
+// implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE. See the GNU General Public
+// License for more details.
+//
+// Licence can be viewed at
 // http://www.gnu.org/licenses/gpl-3.0.txt
 //
 // Please maintain this license information along with authorship
 // and copyright notices in any redistribution of this code
 // **********************************************************************************
+
+//#ifdef ARDUINO_ESP8266_ESP01 || ARDUINO_ESP8266_NODEMCU || ARDUINO_ESP32_DEV
+#if defined( ARDUINO_ESP8266_NODEMCU) || defined(ARDUINO_ESP8266_ESP01) || defined(ARDUINO_ESP32_DEV)
+
+// for ESP* board this functions do not aply and generate a compile error
+//#define ESPBOARDS
+
+#else
+// for other processor ok to define
+
 #ifndef RFM69_OTA_H
 #define RFM69_OTA_H
 #ifdef __AVR_ATmega1284P__
@@ -77,3 +87,5 @@ uint8_t readSerialLine(char* input, char endOfLineChar=10, uint8_t maxLength=115
 void PrintHex83(uint8_t* data, uint8_t length);
 
 #endif
+
+#endif //ESP exclusion
