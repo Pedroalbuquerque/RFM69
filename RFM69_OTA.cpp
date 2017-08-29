@@ -12,24 +12,30 @@
 // **********************************************************************************
 // License
 // **********************************************************************************
-// This program is free software; you can redistribute it 
-// and/or modify it under the terms of the GNU General    
-// Public License as published by the Free Software       
-// Foundation; either version 3 of the License, or        
-// (at your option) any later version.                    
-//                                                        
-// This program is distributed in the hope that it will   
-// be useful, but WITHOUT ANY WARRANTY; without even the  
-// implied warranty of MERCHANTABILITY or FITNESS FOR A   
-// PARTICULAR PURPOSE. See the GNU General Public        
-// License for more details.                              
-//                                                        
-// Licence can be viewed at                               
+// This program is free software; you can redistribute it
+// and/or modify it under the terms of the GNU General
+// Public License as published by the Free Software
+// Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will
+// be useful, but WITHOUT ANY WARRANTY; without even the
+// implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE. See the GNU General Public
+// License for more details.
+//
+// Licence can be viewed at
 // http://www.gnu.org/licenses/gpl-3.0.txt
 //
 // Please maintain this license information along with authorship
 // and copyright notices in any redistribution of this code
 // **********************************************************************************
+
+
+#if defined( ARDUINO_ESP8266_NODEMCU) || defined(ARDUINO_ESP8266_ESP01) || defined(ARDUINO_ESP32_DEV)
+// for ESP* board this functions do not aply and generate a compile error
+#else
+// for other processor ok to define
 #include <RFM69_OTA.h>
 #include <RFM69registers.h>
 #include <avr/wdt.h>
@@ -37,7 +43,7 @@
 
 //===================================================================================================================
 // CheckForWirelessHEX() - Checks whether the last message received was a wireless programming request handshake
-// If so it will start the handshake protocol, receive the new HEX image and 
+// If so it will start the handshake protocol, receive the new HEX image and
 // store it on the external flash chip, then reboot
 // Assumes radio has been initialized and has just received a message (is not in SLEEP mode, and you called CRCPass())
 // Assumes flash is an external SPI flash memory chip that has been initialized
@@ -125,7 +131,7 @@ uint8_t HandleWirelessHEXData(RFM69 radio, uint8_t remoteID, SPIFlash flash, uin
   flash.writeBytes(0,"FLXIMG:", 7);
   flash.writeByte(9,':');
   now=millis();
-    
+
   while(1)
   {
     if (radio.receiveDone() && radio.SENDERID == remoteID)
@@ -138,7 +144,7 @@ uint8_t HandleWirelessHEXData(RFM69 radio, uint8_t remoteID, SPIFlash flash, uin
         {
           uint8_t index=3;
           tmp = 0;
-          
+
           //read packet SEQ
           for (uint8_t i = 4; i<8; i++) //up to 4 characters for seq number
           {
@@ -218,7 +224,7 @@ uint8_t HandleWirelessHEXData(RFM69 radio, uint8_t remoteID, SPIFlash flash, uin
       pinMode(LEDpin,OUTPUT); digitalWrite(LEDpin,HIGH); delay(1); digitalWrite(LEDpin,LOW);
       #endif
     }
-    
+
     //abort FLASH sequence if no valid packet received for a long time
     if (millis()-now > timeout)
     {
@@ -259,7 +265,7 @@ uint8_t CheckForSerialHEX(uint8_t* input, uint8_t inputLen, RFM69 radio, uint8_t
         Serial.println((char*)radio.DATA); //signal serial handshake fail/error and return
         return false;
       }
-      
+
       Serial.println(F("\nFLX?OK")); //signal serial handshake back to host script
 #ifdef SHIFTCHANNEL
       if (HandleSerialHEXDataWrapper(radio, targetID, TIMEOUT, ACKTIMEOUT, DEBUG))
@@ -322,13 +328,13 @@ uint8_t HandleSerialHEXData(RFM69 radio, uint8_t targetID, uint16_t TIMEOUT, uin
   uint8_t remoteID = radio.SENDERID; //save the remoteID as soon as possible
   uint8_t sendBuf[57];
   char input[115];
-  //a FLASH record should not be more than 64 bytes: FLX:9999:10042000FF4FA591B4912FB7F894662321F48C91D6 
+  //a FLASH record should not be more than 64 bytes: FLX:9999:10042000FF4FA591B4912FB7F894662321F48C91D6
 
   while(1) {
     inputLen = readSerialLine(input);
     if (inputLen == 0) goto timeoutcheck;
     tmp = 0;
-    
+
     if (inputLen >= 6) { //FLX:9:
       if (input[0]=='F' && input[1]=='L' && input[2]=='X')
       {
@@ -359,7 +365,7 @@ uint8_t HandleSerialHEXData(RFM69 radio, uint8_t targetID, uint16_t TIMEOUT, uin
             {
               uint8_t sendBufLen = prepareSendBuffer(input+index+8, sendBuf, hexDataLen, seq); //extract HEX data from input to BYTE data into sendBuf (go from 2 HEX bytes to 1 byte), +8 jumps over the header to the HEX raw data
               //Serial.print(F("PREP "));Serial.print(sendBufLen); Serial.print(F(" > ")); PrintHex83(sendBuf, sendBufLen);
-              
+
               //SEND RADIO DATA
               if (sendHEXPacket(radio, remoteID, sendBuf, sendBufLen, seq, TIMEOUT, ACKTIMEOUT, DEBUG))
               {
@@ -379,7 +385,7 @@ uint8_t HandleSerialHEXData(RFM69 radio, uint8_t targetID, uint16_t TIMEOUT, uin
         }
       }
     }
-    
+
     //abort FLASH sequence if no valid packet received for a long time
 timeoutcheck:
     if (millis()-now > TIMEOUT)
@@ -413,9 +419,9 @@ uint8_t validateHEXData(void* data, uint8_t length)
     if (i%2 && i<length-2) checksum+=BYTEfromHEX(input[i-1], input[i]);
   }
   checksum=(checksum^0xFF)+1;
-  
+
   //TODO : CHECK for address continuity (intel HEX addresses are big endian)
-  
+
   //Serial.print(F("final CRC:"));Serial.println((uint8_t)checksum, HEX);
   //Serial.print(F("CRC byte:"));Serial.println(BYTEfromHEX(input[length-2], input[length-1]), HEX);
 
@@ -459,16 +465,16 @@ uint8_t BYTEfromHEX(char MSB, char LSB)
 uint8_t sendHEXPacket(RFM69 radio, uint8_t targetID, uint8_t* sendBuf, uint8_t hexDataLen, uint16_t seq, uint16_t TIMEOUT, uint16_t ACKTIMEOUT, uint8_t DEBUG)
 {
   long now = millis();
-  
+
   while(1) {
     if (DEBUG) { Serial.print(F("RFTX > ")); PrintHex83(sendBuf, hexDataLen); }
     if (radio.sendWithRetry(targetID, sendBuf, hexDataLen, 2, ACKTIMEOUT))
     {
       uint8_t ackLen = radio.DATALEN;
-      
+
       if (DEBUG) { Serial.print(F("RFACK > ")); Serial.print(ackLen); Serial.print(F(" > ")); PrintHex83((uint8_t*)radio.DATA, ackLen); }
-      
-      if (ackLen >= 8 && radio.DATA[0]=='F' && radio.DATA[1]=='L' && radio.DATA[2]=='X' && 
+
+      if (ackLen >= 8 && radio.DATA[0]=='F' && radio.DATA[1]=='L' && radio.DATA[2]=='X' &&
           radio.DATA[3]==':' && radio.DATA[ackLen-3]==':' &&
           radio.DATA[ackLen-2]=='O' && radio.DATA[ackLen-1]=='K')
       {
@@ -491,12 +497,12 @@ uint8_t sendHEXPacket(RFM69 radio, uint8_t targetID, uint8_t* sendBuf, uint8_t h
 //===================================================================================================================
 // PrintHex83() - prints 8-bit data in HEX format
 //===================================================================================================================
-void PrintHex83(uint8_t *data, uint8_t length) 
+void PrintHex83(uint8_t *data, uint8_t length)
 {
   char tmp[length*2+1];
   uint8_t first ;
   int j=0;
-  for (uint8_t i=0; i<length; i++) 
+  for (uint8_t i=0; i<length; i++)
   {
     first = (data[i] >> 4) | 48;
     if (first > 57) tmp[j] = first + (uint8_t)39;
@@ -504,7 +510,7 @@ void PrintHex83(uint8_t *data, uint8_t length)
     j++;
 
     first = (data[i] & 0x0F) | 48;
-    if (first > 57) tmp[j] = first + (uint8_t)39; 
+    if (first > 57) tmp[j] = first + (uint8_t)39;
     else tmp[j] = first;
     j++;
   }
@@ -523,3 +529,5 @@ void resetUsingWatchdog(uint8_t DEBUG)
   wdt_enable(WDTO_15MS);
   while(1) if (DEBUG) Serial.print(F("."));
 }
+
+#endif //ESP exclusion
